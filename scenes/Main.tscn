@@ -1,0 +1,183 @@
+[gd_scene load_steps=3 format=3 uid="uid://dujat6b8k2box"]
+
+[ext_resource type="Script" uid="uid://dlrxe2gndynge" path="res://scripts/main.gd" id="1_main"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_foundation"]
+size = Vector2(400, 50)
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.53, 0.81, 0.92, 1)
+
+[node name="Foundation" type="StaticBody2D" parent="."]
+position = Vector2(400, 550)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Foundation"]
+shape = SubResource("RectangleShape2D_foundation")
+
+[node name="FoundationVisual" type="ColorRect" parent="Foundation"]
+offset_left = -200.0
+offset_top = -25.0
+offset_right = 200.0
+offset_bottom = 25.0
+color = Color(0.35, 0.25, 0.15, 1)
+
+[node name="Crane" type="Node2D" parent="."]
+position = Vector2(400, 50)
+
+[node name="ArmVisual" type="ColorRect" parent="Crane"]
+offset_left = -200.0
+offset_top = -8.0
+offset_right = 200.0
+offset_bottom = 8.0
+color = Color(0.4, 0.4, 0.4, 1)
+
+[node name="Rope" type="Line2D" parent="Crane"]
+points = PackedVector2Array(0, 8, 0, 100)
+width = 3.0
+default_color = Color(0.6, 0.6, 0.6, 1)
+
+[node name="BlockContainer" type="Node2D" parent="Crane"]
+position = Vector2(0, 100)
+
+[node name="Tower" type="Node2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="ScoreLabel" type="Label" parent="UI"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 50.0
+text = "Score: 0"
+
+[node name="MultiplierLabel" type="Label" parent="UI"]
+offset_left = 20.0
+offset_top = 55.0
+offset_right = 200.0
+offset_bottom = 85.0
+text = "Multiplier: 1x"
+
+[node name="WindLabel" type="Label" parent="UI"]
+offset_left = 600.0
+offset_top = 20.0
+offset_right = 780.0
+offset_bottom = 50.0
+text = "Wind: Calm"
+horizontal_alignment = 2
+
+[node name="GameOverScreen" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="UI/GameOverScreen"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="GameOverLabel" type="Label" parent="UI/GameOverScreen"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -60.0
+offset_right = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "GAME OVER"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RestartButton" type="Button" parent="UI/GameOverScreen"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = 10.0
+offset_right = 80.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Restart"
+
+[node name="PauseScreen" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="UI/PauseScreen"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="PauseLabel" type="Label" parent="UI/PauseScreen"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -80.0
+offset_right = 150.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "PAUSED"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="UI/PauseScreen"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = -10.0
+offset_right = 80.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Resume"
+
+[node name="RestartButton" type="Button" parent="UI/PauseScreen"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = 40.0
+offset_right = 80.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Restart"
