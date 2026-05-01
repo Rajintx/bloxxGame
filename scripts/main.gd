@@ -118,7 +118,7 @@ func _input(event: InputEvent) -> void:
 	if is_paused or is_game_over or block_dropped:
 		return
 
-	if event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):
+	if event.is_action_pressed("ui_accept") or event.is_action_pressed("drop_block") or (event is InputEventMouseButton and event.pressed):
 		_release_block()
 
 func _release_block() -> void:
@@ -205,6 +205,7 @@ func _on_block_body_entered(body: Node, block: RigidBody2D) -> void:
 		_score_block(block)
 	else:
 		# Touched something else (ground, wrong block, etc.)
+		print("DEBUG: Block touched invalid body. Triggering game over.")
 		_game_over()
 
 func _score_block(block: RigidBody2D) -> void:
@@ -259,6 +260,7 @@ func _score_block(block: RigidBody2D) -> void:
 
 func _on_block_screen_exited() -> void:
 	if not is_game_over and block_dropped and not is_paused:
+		print("DEBUG: Block exited screen unexpectedly. Triggering game over.")
 		_game_over()
 
 func _update_wind() -> void:
@@ -284,6 +286,7 @@ func _update_ui() -> void:
 	multiplier_label.text = "Multiplier: %dx" % multiplier
 
 func _game_over() -> void:
+	print("DEBUG: _game_over() called.")
 	is_game_over = true
 	game_over_screen.visible = true
 	if is_instance_valid(current_block):
