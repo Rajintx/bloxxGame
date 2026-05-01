@@ -22,6 +22,9 @@ var wind_duration_max: float = 12.0
 
 var perfect_threshold: float = 5.0
 var last_landed_x: float = 0.0
+var last_landed_blocks: Array = [] # Stores references to the last 3 landed blocks
+
+var block_colors: Array = [
 
 var block_colors: Array = [
 	Color(0.9, 0.75, 0.2),
@@ -191,7 +194,7 @@ func _spawn_new_block() -> void:
 	# Use a lambda or bind to ensure we know which block triggered the collision
 	current_block.body_entered.connect(_on_block_body_entered.bind(current_block))
 	var notifier = current_block.get_node("VisibleOnScreenNotifier2D")
-	notifier.screen_exited.connect(_on_block_screen_exited)
+	notifier.screen_exited.connect(_on_block_screen_exited.bind(current_block))
 
 func _on_block_body_entered(body: Node, block: RigidBody2D) -> void:
 	if is_game_over or is_paused:
@@ -212,6 +215,11 @@ func _score_block(block: RigidBody2D) -> void:
 	# Disconnect collision signal once scored
 	if block.body_entered.is_connected(_on_block_body_entered.bind(block)):
 		block.body_entered.disconnect(_on_block_body_entered.bind(block))
+	
+	# Disconnect screen exited signal once scored
+	var notifier = block.get_node("VisibleOnScreenNotifier2D")
+	if notifier.screen_exited.is_connected(_on_block_screen_exited.bind(block)):
+		notifier.screen_exited.disconnect(_on_block_screen_exited.bind(block))
 
 	block_dropped = false
 	current_block = null
@@ -250,6 +258,10 @@ func _score_block(block: RigidBody2D) -> void:
 	last_landed_x = block.global_position.x
 	last_landed_node = block
 	
+	last_landed_blocks.append(block)
+	if last_landed_blocks.size() > 3:
+		last_landed_blocks.remove_at(0) # Keep only the last 3 blocks
+	
 	# Move camera up
 	target_camera_y -= 50.0
 	
@@ -258,10 +270,18 @@ func _score_block(block: RigidBody2D) -> void:
 
 	get_tree().create_timer(0.5).timeout.connect(_spawn_new_block, CONNECT_ONE_SHOT)
 
-func _on_block_screen_exited() -> void:
-	if not is_game_over and block_dropped and not is_paused:
-		print("DEBUG: Block exited screen unexpectedly. Triggering game over.")
-		_game_over()
+func _on_block_screen_exited(block_that_exited: RigidBody2D) -> void:
+	if not is_game_over and not is_paused:
+		# Game over if the CURRENTLY FALLING block exits the screen.
+		if block_that_exited == current_block and block_dropped:
+			print("DEBUG: Active block exited screen unexpectedly. Triggering game over.")
+			_game_over()
+		# Game over if one of the last 3 landed blocks exits the screen.
+		elif last_landed_blocks.has(block_that_exited):
+			print("DEBUG: One of the last 3 landed blocks exited screen. Triggering game over.")
+			_game_over()
+		else:
+			print("DEBUG: A non-critical block exited screen. Not triggering game over from here.")
 
 func _update_wind() -> void:
 	# Set a new random interval for the next wind change
@@ -327,6 +347,8 @@ func _restart_game() -> void:
 	
 	target_camera_y = 300.0
 	camera.position.y = 300.0
+	
+	last_landed_blocks.clear()
 	
 	var foundation = get_node_or_null("Foundation")
 	if foundation:
