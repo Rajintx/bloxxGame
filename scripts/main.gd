@@ -260,11 +260,14 @@ func _on_block_screen_exited() -> void:
 		_game_over()
 
 func _update_wind() -> void:
-	var strength = randf_range(30, 180)
+	# Initial max wind is 10, increases by 10 for every 25 blocks
+	var max_wind = 10.0 + (floor(landed_count / 25.0) * 10.0)
+	var strength = randf_range(0, max_wind)
 	var direction = randf_range(-1.0, 1.0)
 	wind_velocity = Vector2(direction * strength, 0)
 
-	if abs(wind_velocity.x) < 40:
+	# Adjust 'Calm' threshold to be relative to current max wind
+	if abs(wind_velocity.x) < (max_wind * 0.2):
 		wind_label.text = "Wind: Calm"
 	elif wind_velocity.x > 0:
 		wind_label.text = "Wind: >> %d" % int(wind_velocity.x)
