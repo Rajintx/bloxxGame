@@ -16,7 +16,9 @@ var crane_base_x: float = 400.0
 
 var wind_velocity: Vector2 = Vector2.ZERO
 var wind_timer: float = 0.0
-var wind_interval: float = 3.0
+var wind_interval: float = 5.0 # Current random interval
+var wind_duration_min: float = 5.0
+var wind_duration_max: float = 12.0
 
 var perfect_threshold: float = 5.0
 var last_landed_x: float = 0.0
@@ -260,6 +262,9 @@ func _on_block_screen_exited() -> void:
 		_game_over()
 
 func _update_wind() -> void:
+	# Set a new random interval for the next wind change
+	wind_interval = randf_range(wind_duration_min, wind_duration_max)
+	
 	# Initial max wind is 10, increases by 10 for every 25 blocks
 	var max_wind = 10.0 + (floor(landed_count / 25.0) * 10.0)
 	var strength = randf_range(0, max_wind)
