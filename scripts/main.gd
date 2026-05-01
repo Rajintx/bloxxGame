@@ -186,23 +186,30 @@ func _spawn_new_block() -> void:
 	current_block = new_block
 	block_dropped = false
 
-	current_block.body_entered.connect(_on_block_body_entered)
+	# Use a lambda or bind to ensure we know which block triggered the collision
+	current_block.body_entered.connect(_on_block_body_entered.bind(current_block))
 	var notifier = current_block.get_node("VisibleOnScreenNotifier2D")
 	notifier.screen_exited.connect(_on_block_screen_exited)
 
-func _on_block_body_entered(body: Node) -> void:
+func _on_block_body_entered(body: Node, block: RigidBody2D) -> void:
 	if is_game_over or is_paused:
 		return
-	if not is_instance_valid(current_block):
-		return
-	if not block_dropped:
+	# Only process if this is the active dropped block
+	if block != current_block or not block_dropped:
 		return
 
 	# Strict stacking: must touch the last landed node
 	if body == last_landed_node:
-		_score_block(current_block)
+		_score_block(block)
+	else:
+		# Touched something else (ground, wrong block, etc.)
+		_game_over()
 
 func _score_block(block: RigidBody2D) -> void:
+	# Disconnect collision signal once scored
+	if block.body_entered.is_connected(_on_block_body_entered.bind(block)):
+		block.body_entered.disconnect(_on_block_body_entered.bind(block))
+
 	block_dropped = false
 	current_block = null
 
