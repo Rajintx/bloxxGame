@@ -31,6 +31,7 @@ var block_colors: Array = [
 
 var block_physics_material: PhysicsMaterial
 
+@onready var camera: Camera2D = $Camera2D
 @onready var crane: Node2D = $Crane
 @onready var block_container: Node2D = $Crane/BlockContainer
 @onready var tower: Node2D = $Tower
@@ -41,6 +42,8 @@ var block_physics_material: PhysicsMaterial
 @onready var pause_screen: Control = $UI/PauseScreen
 
 var current_block: RigidBody2D = null
+var last_landed_node: Node = null
+var target_camera_y: float = 300.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -52,14 +55,19 @@ func _ready() -> void:
 	var foundation = get_node_or_null("Foundation")
 	if foundation:
 		foundation.add_to_group("foundation")
+		last_landed_node = foundation
+		last_landed_x = foundation.global_position.x
 		
 	_connect_buttons()
 	randomize()
 	_update_wind()
 	_update_ui()
 	_spawn_new_block()
+	
+	target_camera_y = camera.position.y
 
 func _connect_buttons() -> void:
+# ... (rest of buttons)
 # ... (rest of the function)
 	var go_restart = game_over_screen.get_node_or_null("RestartButton")
 	if go_restart:
@@ -77,6 +85,11 @@ func _process(delta: float) -> void:
 
 	crane_angle += crane_speed * delta
 	crane.position.x = crane_base_x + sin(crane_angle) * crane_range
+	
+	# Smoothly move camera
+	camera.position.y = lerp(camera.position.y, target_camera_y, 2.0 * delta)
+	# Keep crane at top of screen
+	crane.position.y = camera.position.y - 250.0
 
 	wind_timer += delta
 	if wind_timer >= wind_interval:
@@ -178,7 +191,6 @@ func _spawn_new_block() -> void:
 	notifier.screen_exited.connect(_on_block_screen_exited)
 
 func _on_block_body_entered(body: Node) -> void:
-# ... (rest of the function)
 	if is_game_over or is_paused:
 		return
 	if not is_instance_valid(current_block):
@@ -186,7 +198,8 @@ func _on_block_body_entered(body: Node) -> void:
 	if not block_dropped:
 		return
 
-	if body.is_in_group("foundation") or body.is_in_group("tower") or body.get_parent() == tower:
+	# Strict stacking: must touch the last landed node
+	if body == last_landed_node:
 		_score_block(current_block)
 
 func _score_block(block: RigidBody2D) -> void:
@@ -211,10 +224,13 @@ func _score_block(block: RigidBody2D) -> void:
 	block.add_to_group("tower")
 
 	landed_count += 1
-	var is_perfect = abs(block.global_position.x - last_landed_x) <= perfect_threshold
-	if landed_count == 1:
-		is_perfect = true
-
+	
+	# Multiplier logic:
+	# "if previous block and next block match perfectly then only multiplier will increase else it won't"
+	# "if slightly misaligned then the multiplier will reset"
+	var diff = abs(block.global_position.x - last_landed_x)
+	var is_perfect = diff <= perfect_threshold
+	
 	if is_perfect:
 		multiplier = min(multiplier + 1, 10)
 	else:
@@ -222,6 +238,11 @@ func _score_block(block: RigidBody2D) -> void:
 
 	score += 1 * multiplier
 	last_landed_x = block.global_position.x
+	last_landed_node = block
+	
+	# Move camera up
+	target_camera_y -= 50.0
+	
 	_update_ui()
 	block_landed.emit()
 
@@ -282,10 +303,20 @@ func _restart_game() -> void:
 	multiplier = 1
 	is_game_over = false
 	landed_count = 0
-	last_landed_x = 0.0
 	crane_angle = 0.0
 	wind_timer = 0.0
 	block_dropped = false
+	
+	target_camera_y = 300.0
+	camera.position.y = 300.0
+	
+	var foundation = get_node_or_null("Foundation")
+	if foundation:
+		last_landed_node = foundation
+		last_landed_x = foundation.global_position.x
+	else:
+		last_landed_node = null
+		last_landed_x = 0.0
 
 	game_over_screen.visible = false
 	pause_screen.visible = false

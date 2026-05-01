@@ -8,6 +8,9 @@ size = Vector2(400, 50)
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
 
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(400, 300)
+
 [node name="Background" type="ColorRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
