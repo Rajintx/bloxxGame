@@ -16,15 +16,19 @@ var crane_base_x: float = 400.0
 
 var wind_velocity: Vector2 = Vector2.ZERO
 var wind_timer: float = 0.0
-var wind_interval: float = 5.0 # Current random interval
+var wind_interval: float = 5.0
 var wind_duration_min: float = 5.0
 var wind_duration_max: float = 12.0
 
 var perfect_threshold: float = 5.0
 var last_landed_x: float = 0.0
-var last_landed_blocks: Array = [] # Stores references to the last 3 landed blocks
+var last_landed_blocks: Array = []
+var tilt_threshold_degrees: float = 25
+var tilted_block_count: int = 0
+var tower_collapsing: bool = false
 
-var block_colors: Array = [
+var camera_lerp_speed: float = 0.8
+var camera_y_offset_from_block: float = 150.0
 
 var block_colors: Array = [
 	Color(0.9, 0.75, 0.2),
@@ -55,25 +59,22 @@ func _ready() -> void:
 	block_physics_material = PhysicsMaterial.new()
 	block_physics_material.friction = 0.8
 	block_physics_material.bounce = 0.2
-	
-	# Ensure foundation is in the correct group
+
 	var foundation = get_node_or_null("Foundation")
 	if foundation:
 		foundation.add_to_group("foundation")
 		last_landed_node = foundation
 		last_landed_x = foundation.global_position.x
-		
+
 	_connect_buttons()
 	randomize()
 	_update_wind()
 	_update_ui()
 	_spawn_new_block()
-	
-	target_camera_y = camera.position.y
+
+	target_camera_y = last_landed_node.global_position.y - camera_y_offset_from_block
 
 func _connect_buttons() -> void:
-# ... (rest of buttons)
-# ... (rest of the function)
 	var go_restart = game_over_screen.get_node_or_null("RestartButton")
 	if go_restart:
 		go_restart.pressed.connect(_on_game_over_restart_pressed)
@@ -90,10 +91,8 @@ func _process(delta: float) -> void:
 
 	crane_angle += crane_speed * delta
 	crane.position.x = crane_base_x + sin(crane_angle) * crane_range
-	
-	# Smoothly move camera
-	camera.position.y = lerp(camera.position.y, target_camera_y, 2.0 * delta)
-	# Keep crane at top of screen
+
+	camera.position.y = lerp(camera.position.y, target_camera_y, camera_lerp_speed * delta)
 	crane.position.y = camera.position.y - 250.0
 
 	wind_timer += delta
@@ -102,7 +101,7 @@ func _process(delta: float) -> void:
 		wind_timer = 0.0
 
 func _physics_process(_delta: float) -> void:
-	if is_paused or is_game_over:
+	if is_paused or is_game_over or tower_collapsing:
 		return
 
 	if is_instance_valid(current_block):
@@ -111,6 +110,8 @@ func _physics_process(_delta: float) -> void:
 		elif block_dropped:
 			current_block.apply_central_force(wind_velocity * 5.0)
 
+	_check_tilt()
+
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if is_game_over:
@@ -118,7 +119,7 @@ func _input(event: InputEvent) -> void:
 		_toggle_pause()
 		return
 
-	if is_paused or is_game_over or block_dropped:
+	if is_paused or is_game_over or tower_collapsing or block_dropped:
 		return
 
 	if event.is_action_pressed("ui_accept") or event.is_action_pressed("drop_block") or (event is InputEventMouseButton and event.pressed):
@@ -178,10 +179,9 @@ func _create_block() -> RigidBody2D:
 	return block
 
 func _spawn_new_block() -> void:
-	if is_game_over or is_paused:
+	if is_game_over or is_paused or tower_collapsing:
 		return
-	
-	# Prevent multiple blocks from spawning
+
 	if is_instance_valid(current_block):
 		return
 
@@ -191,7 +191,6 @@ func _spawn_new_block() -> void:
 	current_block = new_block
 	block_dropped = false
 
-	# Use a lambda or bind to ensure we know which block triggered the collision
 	current_block.body_entered.connect(_on_block_body_entered.bind(current_block))
 	var notifier = current_block.get_node("VisibleOnScreenNotifier2D")
 	notifier.screen_exited.connect(_on_block_screen_exited.bind(current_block))
@@ -199,24 +198,23 @@ func _spawn_new_block() -> void:
 func _on_block_body_entered(body: Node, block: RigidBody2D) -> void:
 	if is_game_over or is_paused:
 		return
-	# Only process if this is the active dropped block
 	if block != current_block or not block_dropped:
 		return
 
-	# Strict stacking: must touch the last landed node
 	if body == last_landed_node:
-		_score_block(block)
+		call_deferred("_score_block", block)
 	else:
-		# Touched something else (ground, wrong block, etc.)
 		print("DEBUG: Block touched invalid body. Triggering game over.")
 		_game_over()
 
 func _score_block(block: RigidBody2D) -> void:
-	# Disconnect collision signal once scored
+	# Save the rotation at landing time before we zero it out
+	var landing_rotation = block.global_rotation
+	block.set_meta("landed_rotation", landing_rotation)
+
 	if block.body_entered.is_connected(_on_block_body_entered.bind(block)):
 		block.body_entered.disconnect(_on_block_body_entered.bind(block))
-	
-	# Disconnect screen exited signal once scored
+
 	var notifier = block.get_node("VisibleOnScreenNotifier2D")
 	if notifier.screen_exited.is_connected(_on_block_screen_exited.bind(block)):
 		notifier.screen_exited.disconnect(_on_block_screen_exited.bind(block))
@@ -235,20 +233,13 @@ func _score_block(block: RigidBody2D) -> void:
 	var global_pos = block.global_position
 	var global_rot = block.global_rotation
 
-	block.get_parent().remove_child(block)
-	tower.add_child(block)
-	block.global_position = global_pos
-	block.global_rotation = global_rot
-	block.add_to_group("tower")
+	call_deferred("_reparent_block_to_tower", block, global_pos, global_rot)
 
 	landed_count += 1
-	
-	# Multiplier logic:
-	# "if previous block and next block match perfectly then only multiplier will increase else it won't"
-	# "if slightly misaligned then the multiplier will reset"
+
 	var diff = abs(block.global_position.x - last_landed_x)
 	var is_perfect = diff <= perfect_threshold
-	
+
 	if is_perfect:
 		multiplier = min(multiplier + 1, 10)
 	else:
@@ -257,43 +248,101 @@ func _score_block(block: RigidBody2D) -> void:
 	score += 1 * multiplier
 	last_landed_x = block.global_position.x
 	last_landed_node = block
-	
+
 	last_landed_blocks.append(block)
 	if last_landed_blocks.size() > 3:
-		last_landed_blocks.remove_at(0) # Keep only the last 3 blocks
-	
-	# Move camera up
-	target_camera_y -= 50.0
-	
+		last_landed_blocks.remove_at(0)
+
+	_check_tilt()
+
+	target_camera_y = block.global_position.y - camera_y_offset_from_block
+
 	_update_ui()
 	block_landed.emit()
 
 	get_tree().create_timer(0.5).timeout.connect(_spawn_new_block, CONNECT_ONE_SHOT)
 
+func _check_tilt() -> void:
+	if tower_collapsing:
+		return
+	if last_landed_blocks.size() < 3:
+		return
+
+	var cumulative_lean: float = 0.0
+
+	for i in range(last_landed_blocks.size() - 1, -1, -1):
+		var block = last_landed_blocks[i]
+		if is_instance_valid(block):
+			var rot = rad_to_deg(block.get_meta("landed_rotation", 0.0))
+			cumulative_lean += rot
+
+	print("DEBUG: Cumulative lean = %.4f degrees" % cumulative_lean)
+
+	if abs(cumulative_lean) >= tilt_threshold_degrees:
+		print("DEBUG: Cumulative lean too high. Starting tower collapse.")
+		_start_tower_collapse()
+				
+func _reparent_block_to_tower(block: RigidBody2D, global_pos: Vector2, global_rot: float) -> void:
+	if not is_instance_valid(block):
+		return
+	block.get_parent().remove_child(block)
+	tower.add_child(block)
+	block.global_position = global_pos
+	block.global_rotation = global_rot
+	block.add_to_group("tower")
+func _start_tower_collapse() -> void:
+	tower_collapsing = true
+
+	if is_instance_valid(current_block):
+		current_block.freeze = true
+		current_block.linear_velocity = Vector2.ZERO
+		current_block.angular_velocity = 0.0
+
+	var original_position = tower.position
+	var shake_duration := 0.6
+	var shake_intensity := 5.0
+	var shake_timer := 0.0
+
+	while shake_timer < shake_duration:
+		var elapsed = get_process_delta_time()
+		shake_timer += elapsed
+		var current_intensity = shake_intensity * (1.0 - shake_timer / shake_duration)
+		tower.position.x = original_position.x + randf_range(-current_intensity, current_intensity)
+		await get_tree().process_frame
+	tower.position = original_position
+
+	for child in tower.get_children():
+		if child is RigidBody2D:
+			child.freeze = false
+			child.gravity_scale = 1.0
+			child.collision_layer = 4
+			child.collision_mask = 1
+			child.apply_central_force(Vector2(randf_range(-200, 200), randf_range(-100, 50)))
+			child.apply_torque_impulse(randf_range(-500, 500))
+
+	await get_tree().create_timer(1.5).timeout
+	_game_over()
+
 func _on_block_screen_exited(block_that_exited: RigidBody2D) -> void:
 	if not is_game_over and not is_paused:
-		# Game over if the CURRENTLY FALLING block exits the screen.
 		if block_that_exited == current_block and block_dropped:
-			print("DEBUG: Active block exited screen unexpectedly. Triggering game over.")
+			print("DEBUG: Active block exited screen. Triggering game over.")
 			_game_over()
-		# Game over if one of the last 3 landed blocks exits the screen.
 		elif last_landed_blocks.has(block_that_exited):
-			print("DEBUG: One of the last 3 landed blocks exited screen. Triggering game over.")
+			print("DEBUG: Landed block exited screen. Triggering game over.")
 			_game_over()
 		else:
-			print("DEBUG: A non-critical block exited screen. Not triggering game over from here.")
+			print("DEBUG: Non-critical block exited screen.")
 
 func _update_wind() -> void:
-	# Set a new random interval for the next wind change
 	wind_interval = randf_range(wind_duration_min, wind_duration_max)
-	
-	# Initial max wind is 10, increases by 10 for every 25 blocks
-	var max_wind = 10.0 + (floor(landed_count / 25.0) * 10.0)
+
+	var every_x_block = 10.0
+	var max_wind = 10.0 + (floor(landed_count / every_x_block) * 10.0)
 	var strength = randf_range(0, max_wind)
 	var direction = randf_range(-1.0, 1.0)
 	wind_velocity = Vector2(direction * strength, 0)
 
-	# Adjust 'Calm' threshold to be relative to current max wind
 	if abs(wind_velocity.x) < (max_wind * 0.2):
 		wind_label.text = "Wind: Calm"
 	elif wind_velocity.x > 0:
@@ -317,7 +366,6 @@ func _game_over() -> void:
 func _toggle_pause() -> void:
 	if is_game_over:
 		return
-
 	is_paused = !is_paused
 	get_tree().paused = is_paused
 	pause_screen.visible = is_paused
@@ -344,39 +392,39 @@ func _restart_game() -> void:
 	crane_angle = 0.0
 	wind_timer = 0.0
 	block_dropped = false
-	
-	target_camera_y = 300.0
-	camera.position.y = 300.0
-	
+	tilted_block_count = 0
+	tower.position = Vector2.ZERO
+	tower_collapsing = false
+
 	last_landed_blocks.clear()
-	
+
 	var foundation = get_node_or_null("Foundation")
 	if foundation:
 		last_landed_node = foundation
 		last_landed_x = foundation.global_position.x
+		target_camera_y = last_landed_node.global_position.y - camera_y_offset_from_block
 	else:
 		last_landed_node = null
 		last_landed_x = 0.0
+		target_camera_y = 300.0
+
+	camera.position.y = target_camera_y
 
 	game_over_screen.visible = false
 	pause_screen.visible = false
 
-	# Clear tower blocks
 	for child in tower.get_children():
 		child.queue_free()
 
-	# Clear falling blocks
 	for child in get_children():
 		if child is RigidBody2D:
 			child.queue_free()
-			
-	# Clear crane block
+
 	for child in block_container.get_children():
 		child.queue_free()
 
 	current_block = null
 
-	# Give a small delay for queue_free to finish
 	await get_tree().process_frame
 	await get_tree().process_frame
 
