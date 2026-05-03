@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cyh247t1xawpg"]
 
 [ext_resource type="Script" uid="uid://cg4w50lcs3v6y" path="res://scripts/Block.gd" id="1_01uos"]
+[ext_resource type="Texture2D" uid="uid://meb8sfkr5rlu" path="res://assets/spritesheetblockx.png" id="2_bwmav"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_aadlf"]
 size = Vector2(100, 50)
@@ -17,12 +18,12 @@ linear_damp = 0.5
 angular_damp = 1.0
 script = ExtResource("1_01uos")
 
-[node name="BlockVisual" type="ColorRect" parent="." unique_id=1304355543]
-offset_right = 100.0
-offset_bottom = 50.0
-color = Color(0.9, 0.75, 0.2, 1)
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1020096104]
 shape = SubResource("RectangleShape2D_aadlf")
 
 [node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="." unique_id=2131809773]
+
+[node name="BlockVisual" type="Sprite2D" parent="." unique_id=1218957750]
+texture = ExtResource("2_bwmav")
+hframes = 24
+vframes = 16
