@@ -1,0 +1,33 @@
+
+extends RigidBody2D
+
+signal body_entered(body, block_node)
+signal screen_exited(block_node)
+
+@onready var visual: ColorRect = $BlockVisual
+@onready var notifier: VisibleOnScreenNotifier2D = $VisibleOnScreenNotifier2D
+
+var block_colors: Array = [
+    Color(0.9, 0.75, 0.2),
+    Color(0.2, 0.75, 0.9),
+    Color(0.9, 0.3, 0.3),
+    Color(0.3, 0.9, 0.3),
+    Color(0.7, 0.3, 0.9),
+]
+
+func _ready() -> void:
+    # Set a random color from the predefined list
+    if visual:
+        visual.color = block_colors[randi() % block_colors.size()]
+    
+    # Connect signals for consistency with how main.gd expects them
+    body_entered.connect(_on_body_entered)
+    notifier.screen_exited.connect(_on_screen_exited)
+
+func _on_body_entered(body: Node) -> void:
+    # Emit a custom signal that includes a reference to this block node
+    emit_signal("body_entered", body, self)
+
+func _on_screen_exited() -> void:
+    # Emit a custom signal that includes a reference to this block node
+    emit_signal("screen_exited", self)

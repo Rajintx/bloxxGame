@@ -39,6 +39,8 @@ var block_colors: Array = [
 ]
 
 var block_physics_material: PhysicsMaterial
+const BLOCK_FRICTION: float = 0.8
+const BLOCK_BOUNCE: float = 0.2
 
 @onready var camera: Camera2D = $Camera2D
 @onready var crane: Node2D = $Crane
@@ -55,10 +57,10 @@ var last_landed_node: Node = null
 var target_camera_y: float = 300.0
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	print("Main.gd _ready() called")
 	block_physics_material = PhysicsMaterial.new()
-	block_physics_material.friction = 0.8
-	block_physics_material.bounce = 0.2
+	block_physics_material.friction = BLOCK_FRICTION
+	block_physics_material.bounce = BLOCK_BOUNCE
 
 	var foundation = get_node_or_null("Foundation")
 	if foundation:
@@ -142,42 +144,6 @@ func _release_block() -> void:
 	current_block.linear_velocity = Vector2(wind_velocity.x * 0.5, 0)
 	current_block.gravity_scale = 1.0
 
-func _create_block() -> RigidBody2D:
-	var block = RigidBody2D.new()
-	block.name = "Block"
-	block.gravity_scale = 0.0
-	block.linear_damp = 0.5
-	block.angular_damp = 1.0
-	block.freeze = true
-	block.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
-	block.mass = 1.0
-	block.contact_monitor = true
-	block.max_contacts_reported = 4
-	block.collision_layer = 4
-	block.collision_mask = 3
-	block.physics_material_override = block_physics_material
-
-	var shape = CollisionShape2D.new()
-	var rect_shape = RectangleShape2D.new()
-	rect_shape.size = Vector2(100, 50)
-	shape.shape = rect_shape
-	block.add_child(shape)
-
-	var visual = ColorRect.new()
-	visual.name = "BlockVisual"
-	visual.offset_left = -50.0
-	visual.offset_top = -25.0
-	visual.offset_right = 50.0
-	visual.offset_bottom = 25.0
-	visual.color = block_colors[randi() % block_colors.size()]
-	block.add_child(visual)
-
-	var notifier = VisibleOnScreenNotifier2D.new()
-	notifier.name = "VisibleOnScreenNotifier2D"
-	block.add_child(notifier)
-
-	return block
-
 func _spawn_new_block() -> void:
 	if is_game_over or is_paused or tower_collapsing:
 		return
@@ -185,15 +151,15 @@ func _spawn_new_block() -> void:
 	if is_instance_valid(current_block):
 		return
 
-	var new_block := _create_block()
+	var new_block := load("res://scenes/Block.tscn").instantiate() as RigidBody2D
+	new_block.block_color = block_colors[landed_count % block_colors.size()]
 	block_container.add_child(new_block)
 	new_block.global_position = block_container.global_position
 	current_block = new_block
 	block_dropped = false
 
-	current_block.body_entered.connect(_on_block_body_entered.bind(current_block))
-	var notifier = current_block.get_node("VisibleOnScreenNotifier2D")
-	notifier.screen_exited.connect(_on_block_screen_exited.bind(current_block))
+	current_block.body_entered.connect(Callable(self, "_on_block_body_entered").bind(current_block))
+	current_block.screen_exited.connect(Callable(self, "_on_block_screen_exited").bind(current_block))
 
 func _on_block_body_entered(body: Node, block: RigidBody2D) -> void:
 	if is_game_over or is_paused:
@@ -211,13 +177,6 @@ func _score_block(block: RigidBody2D) -> void:
 	# Save the rotation at landing time before we zero it out
 	var landing_rotation = block.global_rotation
 	block.set_meta("landed_rotation", landing_rotation)
-
-	if block.body_entered.is_connected(_on_block_body_entered.bind(block)):
-		block.body_entered.disconnect(_on_block_body_entered.bind(block))
-
-	var notifier = block.get_node("VisibleOnScreenNotifier2D")
-	if notifier.screen_exited.is_connected(_on_block_screen_exited.bind(block)):
-		notifier.screen_exited.disconnect(_on_block_screen_exited.bind(block))
 
 	block_dropped = false
 	current_block = null

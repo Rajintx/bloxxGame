@@ -8,15 +8,27 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="City Blox"
 run/main_scene="res://scenes/Main.tscn"
-config/features=PackedStringArray("4.4")
+config/features=PackedStringArray("4.6")
+
+[autoload]
+
+MCPRuntime="*res://addons/godot_mcp/runtime/mcp_runtime.gd"
 
 [dotnet]
 
 project/assembly_name="City Blox"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 
 [input]
 
