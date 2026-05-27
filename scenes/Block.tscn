@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://meb8sfkr5rlu" path="res://assets/spritesheetblockx.png" id="2_bwmav"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_aadlf"]
-size = Vector2(100, 50)
+size = Vector2(100, 100)
 
 [node name="Block" type="RigidBody2D" unique_id=1187921187]
 collision_layer = 4
@@ -17,6 +17,7 @@ max_contacts_reported = 4
 linear_damp = 0.5
 angular_damp = 1.0
 script = ExtResource("1_01uos")
+block_color = Color(0.8925574, 0.32026085, 0, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1020096104]
 shape = SubResource("RectangleShape2D_aadlf")

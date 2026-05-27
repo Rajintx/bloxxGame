@@ -20,7 +20,7 @@ var wind_interval: float = 5.0
 var wind_duration_min: float = 5.0
 var wind_duration_max: float = 12.0
 
-var perfect_threshold: float = 5.0
+var perfect_threshold: float = 20.0  # Scaled up for larger blocks
 var last_landed_x: float = 0.0
 var last_landed_blocks: Array = []
 var tilt_threshold_degrees: float = 25
@@ -29,6 +29,7 @@ var tower_collapsing: bool = false
 
 var camera_lerp_speed: float = 0.8
 var camera_y_offset_from_block: float = 150.0
+var camera_zoom: float = 1.0  # Add camera zoom variable
 
 var block_colors: Array = [
 	Color(0.9, 0.75, 0.2),
@@ -58,15 +59,14 @@ var target_camera_y: float = 300.0
 
 func _ready() -> void:
 	print("Main.gd _ready() called")
-	block_physics_material = PhysicsMaterial.new()
-	block_physics_material.friction = BLOCK_FRICTION
-	block_physics_material.bounce = BLOCK_BOUNCE
+	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	var foundation = get_node_or_null("Foundation")
 	if foundation:
 		foundation.add_to_group("foundation")
 		last_landed_node = foundation
 		last_landed_x = foundation.global_position.x
+		print("Foundation position: ", foundation.global_position)
 
 	_connect_buttons()
 	randomize()
@@ -75,6 +75,13 @@ func _ready() -> void:
 	_spawn_new_block()
 
 	target_camera_y = last_landed_node.global_position.y - camera_y_offset_from_block
+	print("Initial camera target Y: ", target_camera_y)
+	print("Camera initial position Y: ", camera.position.y)
+	print("Crane initial position Y: ", crane.position.y)
+	print("BlockContainer initial global position Y: ", block_container.global_position.y)
+	
+	# Set camera zoom to maintain consistent view
+	camera.zoom = Vector2(camera_zoom, camera_zoom)
 
 func _connect_buttons() -> void:
 	var go_restart = game_over_screen.get_node_or_null("RestartButton")
@@ -96,6 +103,9 @@ func _process(delta: float) -> void:
 
 	camera.position.y = lerp(camera.position.y, target_camera_y, camera_lerp_speed * delta)
 	crane.position.y = camera.position.y - 250.0
+	
+	# Ensure camera zoom is maintained
+	camera.zoom = Vector2(camera_zoom, camera_zoom)
 
 	wind_timer += delta
 	if wind_timer >= wind_interval:
@@ -113,6 +123,9 @@ func _physics_process(_delta: float) -> void:
 			current_block.apply_central_force(wind_velocity * 5.0)
 
 	_check_tilt()
+	
+	# Debug print camera position
+	print("Camera Y: ", camera.position.y, " Target Y: ", target_camera_y)
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -234,8 +247,7 @@ func _check_tilt() -> void:
 		if is_instance_valid(block):
 			var rot = rad_to_deg(block.get_meta("landed_rotation", 0.0))
 			cumulative_lean += rot
-
-	print("DEBUG: Cumulative lean = %.4f degrees" % cumulative_lean)
+ 
 
 	if abs(cumulative_lean) >= tilt_threshold_degrees:
 		print("DEBUG: Cumulative lean too high. Starting tower collapse.")
@@ -368,6 +380,12 @@ func _restart_game() -> void:
 		target_camera_y = 300.0
 
 	camera.position.y = target_camera_y
+	
+	# Ensure camera zoom is maintained
+	camera.zoom = Vector2(camera_zoom, camera_zoom)
+	
+	# Ensure camera zoom is maintained
+	camera.zoom = Vector2(camera_zoom, camera_zoom)
 
 	game_over_screen.visible = false
 	pause_screen.visible = false
