@@ -23,7 +23,7 @@ var wind_duration_max: float = 12.0
 var perfect_threshold: float = 20.0  # Scaled up for larger blocks
 var last_landed_x: float = 0.0
 var last_landed_blocks: Array = []
-var tilt_threshold_degrees: float = 25
+var tilt_threshold_degrees: float = 15
 var tilted_block_count: int = 0
 var tower_collapsing: bool = false
 
@@ -75,10 +75,7 @@ func _ready() -> void:
 	_spawn_new_block()
 
 	target_camera_y = last_landed_node.global_position.y - camera_y_offset_from_block
-	print("Initial camera target Y: ", target_camera_y)
-	print("Camera initial position Y: ", camera.position.y)
-	print("Crane initial position Y: ", crane.position.y)
-	print("BlockContainer initial global position Y: ", block_container.global_position.y)
+	 
 	
 	# Set camera zoom to maintain consistent view
 	camera.zoom = Vector2(camera_zoom, camera_zoom)
@@ -123,9 +120,7 @@ func _physics_process(_delta: float) -> void:
 			current_block.apply_central_force(wind_velocity * 5.0)
 
 	_check_tilt()
-	
-	# Debug print camera position
-	print("Camera Y: ", camera.position.y, " Target Y: ", target_camera_y)
+	 
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -247,7 +242,8 @@ func _check_tilt() -> void:
 		if is_instance_valid(block):
 			var rot = rad_to_deg(block.get_meta("landed_rotation", 0.0))
 			cumulative_lean += rot
- 
+			print("Cumulative lean",cumulative_lean)
+ 			
 
 	if abs(cumulative_lean) >= tilt_threshold_degrees:
 		print("DEBUG: Cumulative lean too high. Starting tower collapse.")
