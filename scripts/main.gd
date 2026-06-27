@@ -20,7 +20,7 @@ var wind_interval: float = 5.0
 var wind_duration_min: float = 5.0
 var wind_duration_max: float = 12.0
 
-var perfect_threshold: float = 20.0  # Scaled up for larger blocks
+var perfect_threshold: float = 20.0
 var last_landed_x: float = 0.0
 var last_landed_blocks: Array = []
 var tilt_threshold_degrees: float = 15
@@ -29,7 +29,7 @@ var tower_collapsing: bool = false
 
 var camera_lerp_speed: float = 0.8
 var camera_y_offset_from_block: float = 150.0
-var camera_zoom: float = 1.0  # Add camera zoom variable
+var camera_zoom: float = 1.0
 
 var block_colors: Array = [
 	Color(0.9, 0.75, 0.2),
@@ -38,10 +38,6 @@ var block_colors: Array = [
 	Color(0.3, 0.9, 0.3),
 	Color(0.7, 0.3, 0.9),
 ]
-
-var block_physics_material: PhysicsMaterial
-const BLOCK_FRICTION: float = 0.8
-const BLOCK_BOUNCE: float = 0.2
 
 @onready var camera: Camera2D = $Camera2D
 @onready var crane: Node2D = $Crane
@@ -52,6 +48,8 @@ const BLOCK_BOUNCE: float = 0.2
 @onready var wind_label: Label = $UI/WindLabel
 @onready var game_over_screen: Control = $UI/GameOverScreen
 @onready var pause_screen: Control = $UI/PauseScreen
+@onready var bgm: AudioStreamPlayer = $BGM
+@onready var sfx: AudioStreamPlayer = $SFX
 
 var current_block: RigidBody2D = null
 var last_landed_node: Node = null
@@ -75,10 +73,9 @@ func _ready() -> void:
 	_spawn_new_block()
 
 	target_camera_y = last_landed_node.global_position.y - camera_y_offset_from_block
-	 
-	
-	# Set camera zoom to maintain consistent view
+
 	camera.zoom = Vector2(camera_zoom, camera_zoom)
+	bgm.play()
 
 func _connect_buttons() -> void:
 	var go_restart = game_over_screen.get_node_or_null("RestartButton")
@@ -101,7 +98,6 @@ func _process(delta: float) -> void:
 	camera.position.y = lerp(camera.position.y, target_camera_y, camera_lerp_speed * delta)
 	crane.position.y = camera.position.y - 250.0
 	
-	# Ensure camera zoom is maintained
 	camera.zoom = Vector2(camera_zoom, camera_zoom)
 
 	wind_timer += delta
@@ -121,7 +117,6 @@ func _physics_process(_delta: float) -> void:
 
 	_check_tilt()
 	 
-
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if is_game_over:
@@ -182,9 +177,11 @@ func _on_block_body_entered(body: Node, block: RigidBody2D) -> void:
 		_game_over()
 
 func _score_block(block: RigidBody2D) -> void:
-	# Save the rotation at landing time before we zero it out
 	var landing_rotation = block.global_rotation
 	block.set_meta("landed_rotation", landing_rotation)
+
+	sfx.stream = preload("res://assets/sfx/block_place.wav")
+	sfx.play()
 
 	block_dropped = false
 	current_block = null
@@ -243,8 +240,7 @@ func _check_tilt() -> void:
 			var rot = rad_to_deg(block.get_meta("landed_rotation", 0.0))
 			cumulative_lean += rot
 			print("Cumulative lean",cumulative_lean)
- 			
-
+		 	
 	if abs(cumulative_lean) >= tilt_threshold_degrees:
 		print("DEBUG: Cumulative lean too high. Starting tower collapse.")
 		_start_tower_collapse()
@@ -257,6 +253,7 @@ func _reparent_block_to_tower(block: RigidBody2D, global_pos: Vector2, global_ro
 	block.global_position = global_pos
 	block.global_rotation = global_rot
 	block.add_to_group("tower")
+
 func _start_tower_collapse() -> void:
 	tower_collapsing = true
 
@@ -325,10 +322,15 @@ func _game_over() -> void:
 	print("DEBUG: _game_over() called.")
 	is_game_over = true
 	game_over_screen.visible = true
+	sfx.stream = preload("res://assets/sfx/game_over.ogg")
+	sfx.play()
+	
 	if is_instance_valid(current_block):
 		current_block.freeze = true
 		current_block.linear_velocity = Vector2.ZERO
 		current_block.angular_velocity = 0.0
+		
+	bgm.stop()
 
 func _toggle_pause() -> void:
 	if is_game_over:
@@ -377,10 +379,8 @@ func _restart_game() -> void:
 
 	camera.position.y = target_camera_y
 	
-	# Ensure camera zoom is maintained
 	camera.zoom = Vector2(camera_zoom, camera_zoom)
 	
-	# Ensure camera zoom is maintained
 	camera.zoom = Vector2(camera_zoom, camera_zoom)
 
 	game_over_screen.visible = false
@@ -404,3 +404,4 @@ func _restart_game() -> void:
 	_spawn_new_block()
 	_update_wind()
 	_update_ui()
+	bgm.play()
