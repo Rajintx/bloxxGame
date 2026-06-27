@@ -1,17 +1,17 @@
-[gd_scene format=3 uid="uid://dujat6b8k2box"]
+[gd_scene load_steps=3 format=3 uid="uid://dujat6b8k2box"]
 
 [ext_resource type="Script" uid="uid://dlrxe2gndynge" path="res://scripts/main.gd" id="1_main"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_foundation"]
 size = Vector2(400, 50)
 
-[node name="Main" type="Node2D" unique_id=1848493285]
+[node name="Main" type="Node2D"]
 script = ExtResource("1_main")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=1071358920]
+[node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(400, 300)
 
-[node name="Background" type="ColorRect" parent="." unique_id=132470501]
+[node name="Background" type="ColorRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -19,58 +19,58 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.53, 0.81, 0.92, 1)
 
-[node name="Foundation" type="StaticBody2D" parent="." unique_id=1559834515]
+[node name="Foundation" type="StaticBody2D" parent="."]
 position = Vector2(400, 550)
 collision_layer = 2
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Foundation" unique_id=353765422]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Foundation"]
 shape = SubResource("RectangleShape2D_foundation")
 
-[node name="FoundationVisual" type="ColorRect" parent="Foundation" unique_id=927218965]
+[node name="FoundationVisual" type="ColorRect" parent="Foundation"]
 offset_left = -200.0
 offset_top = -25.0
 offset_right = 200.0
 offset_bottom = 25.0
 color = Color(0.35, 0.25, 0.15, 1)
 
-[node name="Crane" type="Node2D" parent="." unique_id=1967835515]
+[node name="Crane" type="Node2D" parent="."]
 position = Vector2(400, 50)
 
-[node name="ArmVisual" type="ColorRect" parent="Crane" unique_id=1819840163]
+[node name="ArmVisual" type="ColorRect" parent="Crane"]
 offset_left = -200.0
 offset_top = -8.0
 offset_right = 200.0
 offset_bottom = 8.0
 color = Color(0.4, 0.4, 0.4, 1)
 
-[node name="Rope" type="Line2D" parent="Crane" unique_id=2018720368]
+[node name="Rope" type="Line2D" parent="Crane"]
 points = PackedVector2Array(0, 8, 0, 100)
 width = 3.0
 default_color = Color(0.6, 0.6, 0.6, 1)
 
-[node name="BlockContainer" type="Node2D" parent="Crane" unique_id=938436713]
+[node name="BlockContainer" type="Node2D" parent="Crane"]
 position = Vector2(0, 100)
 
-[node name="Tower" type="Node2D" parent="." unique_id=615735626]
+[node name="Tower" type="Node2D" parent="."]
 
-[node name="UI" type="CanvasLayer" parent="." unique_id=1235793330]
+[node name="UI" type="CanvasLayer" parent="."]
 
-[node name="ScoreLabel" type="Label" parent="UI" unique_id=722710201]
+[node name="ScoreLabel" type="Label" parent="UI"]
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 200.0
 offset_bottom = 50.0
 text = "Score: 0"
 
-[node name="MultiplierLabel" type="Label" parent="UI" unique_id=471362600]
+[node name="MultiplierLabel" type="Label" parent="UI"]
 offset_left = 20.0
 offset_top = 55.0
 offset_right = 200.0
 offset_bottom = 85.0
 text = "Multiplier: 1x"
 
-[node name="WindLabel" type="Label" parent="UI" unique_id=1429173770]
+[node name="WindLabel" type="Label" parent="UI"]
 offset_left = 600.0
 offset_top = 20.0
 offset_right = 780.0
@@ -78,7 +78,7 @@ offset_bottom = 50.0
 text = "Wind: Calm"
 horizontal_alignment = 2
 
-[node name="GameOverScreen" type="Control" parent="UI" unique_id=464773537]
+[node name="GameOverScreen" type="Control" parent="UI"]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -87,7 +87,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dimmer" type="ColorRect" parent="UI/GameOverScreen" unique_id=1990712762]
+[node name="Dimmer" type="ColorRect" parent="UI/GameOverScreen"]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -95,7 +95,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="GameOverLabel" type="Label" parent="UI/GameOverScreen" unique_id=287362165]
+[node name="GameOverLabel" type="Label" parent="UI/GameOverScreen"]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
@@ -110,7 +110,7 @@ text = "GAME OVER"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="RestartButton" type="Button" parent="UI/GameOverScreen" unique_id=1962214265]
+[node name="RestartButton" type="Button" parent="UI/GameOverScreen"]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
@@ -124,7 +124,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Restart"
 
-[node name="PauseScreen" type="Control" parent="UI" unique_id=2013697629]
+[node name="PauseScreen" type="Control" parent="UI"]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -133,7 +133,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dimmer" type="ColorRect" parent="UI/PauseScreen" unique_id=1601829421]
+[node name="Dimmer" type="ColorRect" parent="UI/PauseScreen"]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -141,7 +141,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="PauseLabel" type="Label" parent="UI/PauseScreen" unique_id=1798484937]
+[node name="PauseLabel" type="Label" parent="UI/PauseScreen"]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
@@ -157,7 +157,7 @@ text = "PAUSED"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ResumeButton" type="Button" parent="UI/PauseScreen" unique_id=536480440]
+[node name="ResumeButton" type="Button" parent="UI/PauseScreen"]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
@@ -171,7 +171,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Resume"
 
-[node name="RestartButton" type="Button" parent="UI/PauseScreen" unique_id=1230302633]
+[node name="RestartButton" type="Button" parent="UI/PauseScreen"]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5

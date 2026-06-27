@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://cyh247t1xawpg"]
+[gd_scene load_steps=4 format=3 uid="uid://cyh247t1xawpg"]
 
 [ext_resource type="Script" uid="uid://cg4w50lcs3v6y" path="res://scripts/Block.gd" id="1_01uos"]
 [ext_resource type="Texture2D" uid="uid://meb8sfkr5rlu" path="res://assets/spritesheetblockx.png" id="2_bwmav"]
@@ -6,7 +6,7 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_aadlf"]
 size = Vector2(100, 100)
 
-[node name="Block" type="RigidBody2D" unique_id=1187921187]
+[node name="Block" type="RigidBody2D"]
 collision_layer = 4
 collision_mask = 3
 gravity_scale = 0.0
@@ -17,14 +17,14 @@ max_contacts_reported = 4
 linear_damp = 0.5
 angular_damp = 1.0
 script = ExtResource("1_01uos")
-block_color = Color(0.8925574, 0.32026085, 0, 1)
+block_color = Color(0.892557, 0.320261, 0, 1)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1020096104]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_aadlf")
 
-[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="." unique_id=2131809773]
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
 
-[node name="BlockVisual" type="Sprite2D" parent="." unique_id=1218957750]
+[node name="BlockVisual" type="Sprite2D" parent="."]
 texture = ExtResource("2_bwmav")
 hframes = 24
 vframes = 16
